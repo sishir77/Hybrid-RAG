@@ -5,6 +5,7 @@ converter = DocumentConverter()
 
 parsed_document = converter.convert("Quantum computing.pdf")
 
-print(parsed_document.document.export_to_markdown())
 
+if __name__=="__main__":
+    print(parsed_document.document.export_to_markdown())
 
