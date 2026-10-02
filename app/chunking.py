@@ -1,21 +1,43 @@
-from open_pdf import parsed_document
-from langchain_text_splitters import MarkdownTextSplitter
+from open_pdf import result
+from langchain_text_splitters import MarkdownTextSplitter,RecursiveCharacterTextSplitter,MarkdownHeaderTextSplitter
 
-splitter = MarkdownTextSplitter(chunk_size=300, chunk_overlap=50)
+#split the text into sections based on the headers
+headers =[
+   ("#", "h1"),
+   ("##", "h2"),
+   ("###", "h3"),
+   ("####", "h4")
+]
+splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers)
+sections = splitter.split_text(result)
 
-chunks = splitter.split_text(parsed_document)
 
+#split the splitted sections by header into smaller chunks of text based on separators with chunk size.
+section_splitter = RecursiveCharacterTextSplitter(
+   chunk_size=500,
+   chunk_overlap=100,
+   separators=["\n\n", "\n", " ", ""]
+)
+
+chunks = section_splitter.split_documents(sections)
+
+chunk_documents = []
 chunk_id = 0
 for chunk in chunks:
     chunk_id += 1
-    chunks.append({
+    chunk_documents.append({
         "id": chunk_id,
-        "text":chunk,
+        "text":chunk.document,
+        "metadata": chunk.metadata,
         "document": "quantum computing.pdf"  #this is for the testing, we change it on production.
-
     })
 
-print(chunks)
+
+if __name__=="__main__":
+  for chunk in chunk_documents:
+     print(chunk)
+     print()
+
 
 
 
