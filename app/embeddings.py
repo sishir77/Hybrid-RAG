@@ -1,13 +1,13 @@
 from sentence_transformers import SentenceTransformer
 from chunking import chunked_documents
 
-model = SentenceTransformer('all-MiniLM-l6-v2')
+model = SentenceTransformer('all-MiniLM-L6-v2')
 
 
 embedded_chunks=[]
 
 for chunk in chunked_documents:
-    embedding = model.encode(chunk["text"])
+    embedding = model.encode(chunk["text"]).to_list()
     embedded_chunks.append({
         "id": chunk['id'],
         "metadata": chunk['metadata'],
