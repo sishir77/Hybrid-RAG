@@ -1,4 +1,4 @@
-from open_pdf import result
+from open_pdf import result, tables
 from langchain_text_splitters import MarkdownTextSplitter,RecursiveCharacterTextSplitter,MarkdownHeaderTextSplitter
 
 #split the text into sections based on the headers
@@ -18,25 +18,91 @@ section_splitter = RecursiveCharacterTextSplitter(
    chunk_overlap=100,
    separators=["\n\n", "\n", " ", ""]
 )
+chunked_documents = []
+chunked_id=0
 
-chunks = section_splitter.split_documents(sections)
+#detect markdown table
+"""def is_table_line(line):
+    return line.strip().startswith("|") and line.strip().endswith("|")"""
 
-chunk_documents = []
-chunk_id = 0
-for chunk in chunks:
-    chunk_id += 1
-    chunk_documents.append({
-        "id": chunk_id,
-        "text":chunk.document,
-        "metadata": chunk.metadata,
-        "document": "quantum computing.pdf"  #this is for the testing, we change it on production.
+#extract table from normal text
+"""def extract_table(text):
+    lines = text.splitlines()
+    tables =[]
+    normal_lines= []
+
+    current_table = []
+
+    for line in lines:
+        if is_table_line(line):
+            current_table.append(line)
+
+        else:
+            if current_table:
+                tables.append("\n".join(current_table))
+                current_table =[]
+
+            normal_lines.append(line)
+
+    #handles last line if it is a table
+    if current_table:
+        tables.append("\n".join(current_table))
+
+    normal_text = "\n".join(normal_lines)
+    return normal_text, tables"""
+
+#for normal text
+for section in sections:
+   # normal_text, tables = extract_table(section.page_content)
+
+    #split the normal text into smaller chunks
+    if section.page_content.strip():
+        normal_chunks = section_splitter.split_text(section.page_content)
+        for chunk in  normal_chunks:
+            chunked_id +=1
+            chunked_documents.append({
+                "id": chunked_id,
+                "text":chunk,
+                "document":"...",
+                "metadata": {
+                    **section.metadata,
+                    "type": "text"
+                }
+            })
+
+#for table
+for table in tables:
+    parent_metadata={}
+    for section in sections:
+        if table in section.page_content:
+            parent_metadata= section.metadata
+            break
+    chunked_id+=1
+    chunked_documents.append({
+        "id":chunked_id,
+        "text":table,
+        "document":"...",
+        "metadata":{
+            "type":"table"
+        }
     })
 
 
-if __name__=="__main__":
-  for chunk in chunk_documents:
-     print(chunk)
-     print()
+if __name__ == "__main__":
+    for doc in chunked_documents:
+        print("=" * 80)
+
+        print("ID:", doc["id"])
+        print("TYPE:", doc["metadata"]["type"])
+        print("SECTION:", doc["metadata"])
+
+        print("\nTEXT:")
+        print(doc["text"])
+
+
+ 
+
+
 
 
 
