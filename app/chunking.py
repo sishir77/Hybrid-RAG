@@ -72,10 +72,10 @@ for section in sections:
 
 #for table
 for table in tables:
-    parent_metadata={}
+    table_metadata={}
     for section in sections:
         if table in section.page_content:
-            parent_metadata= section.metadata
+            table_metadata= section.metadata
             break
     chunked_id+=1
     chunked_documents.append({
@@ -83,6 +83,7 @@ for table in tables:
         "text":table,
         "document":"...",
         "metadata":{
+            **table_metadata,
             "type":"table"
         }
     })

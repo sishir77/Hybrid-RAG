@@ -7,7 +7,7 @@ model = SentenceTransformer('all-MiniLM-L6-v2')
 embedded_chunks=[]
 
 for chunk in chunked_documents:
-    embedding = model.encode(chunk["text"]).to_list()
+    embedding = model.encode(chunk["text"]).tolist()
     embedded_chunks.append({
         "id": chunk['id'],
         "metadata": chunk['metadata'],
