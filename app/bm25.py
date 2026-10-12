@@ -22,7 +22,7 @@ def bm25_search(question, k=3):
 
     for index in ranked_indices:
         results.append({
-            "id": chunked_documents[index]["id"],
+            "id": chunked_documents[index]['id'],
             "text": chunked_documents[index]['text'],
             "metadata": chunked_documents[index]['metadata'],
             'score': float(scores[index])
@@ -36,10 +36,11 @@ if __name__ == "__main__":
     results = bm25_search(question, k=3)
 
     for result in results:
-        print("ID:", result["id"])
+        print("ID:", result[id])
         print("Score:", result["score"])
         print("Text:", result["text"])
         print("-" * 50)
+        
 
 
 
