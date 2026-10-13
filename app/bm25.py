@@ -1,4 +1,4 @@
-from chunking import chunked_documents
+from app.chunking import chunked_documents
 from rank_bm25 import BM25Okapi
 
 

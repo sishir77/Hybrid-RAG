@@ -1,4 +1,4 @@
-from open_pdf import result, tables
+from app.open_pdf import result, tables
 from langchain_text_splitters import MarkdownTextSplitter,RecursiveCharacterTextSplitter,MarkdownHeaderTextSplitter
 
 #split the text into sections based on the headers

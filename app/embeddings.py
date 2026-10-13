@@ -1,5 +1,5 @@
 from sentence_transformers import SentenceTransformer
-from chunking import chunked_documents
+from app.chunking import chunked_documents
 
 model = SentenceTransformer('all-MiniLM-L6-v2')
 

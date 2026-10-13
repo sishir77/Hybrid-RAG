@@ -1,4 +1,4 @@
-from database import collection
+from app.database import collection
 from sentence_transformers import SentenceTransformer
 
 
@@ -19,8 +19,8 @@ def similarity_search(query, k=3):
         top_chunks.append({
             "id": results["ids"][0][i],
             "text": results["documents"][0][i],
-            "metadata": results["metadatas"][0][i],
-            "distance": results["distances"][0][i]
+            "metadata": results["metadatas"][0][i]
+            
 
 
 

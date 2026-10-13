@@ -1,8 +1,8 @@
-from retrieval import similarity_search
-from bm25 import bm25_search
+from app.retrieval import similarity_search
+from app.bm25 import bm25_search
 
 
-def reciprocal_rank_fusion(result_list, k=60, top_k=5):
+def reciprocal_rank_fusion(result_list, rank_constant=60, top_k=5):
     fused_scores={}
     chunk_data={}
 
@@ -14,7 +14,7 @@ def reciprocal_rank_fusion(result_list, k=60, top_k=5):
             chunk_data[chunk_id]= chunk
 
             #add its reciprocal rank contribution
-            score = +1 / (k+rank)
+            score = 1 / (rank_constant+rank)
 
             fused_scores[chunk_id]= (
                 fused_scores.get(chunk_id, 0)+score
@@ -45,12 +45,30 @@ def hybrid_search(question, k=5):
 
     #print("Semantic IDs:", [r["id"] for r in semantic_results])
     #print("BM25 IDs:", [r["id"] for r in bm25_results])
+    """ print("\n--- SEMANTIC SEARCH ---")
+    for rank, chunk in enumerate(semantic_results, start=1):
+        print(f"Rank: {rank} | ID: {chunk['id']}")
 
+    print("\n--- BM25 SEARCH ---")
+    for rank, chunk in enumerate(bm25_results, start=1):
+        print(f"Rank: {rank} | ID: {chunk['id']}")"""
+    
 
-    return reciprocal_rank_fusion(
+    fused_results= reciprocal_rank_fusion(
         [semantic_results, bm25_results],
         top_k=k
     )
+      # Temporarily inspect the final hybrid ranking
+    """ print("\n--- FINAL HYBRID RESULTS ---")
+    for result in fused_results:
+        print(
+            f"ID: {result['id']} | "
+            f"RRF: {result['rrf_score']:.6f}"
+        )"""
+
+    return fused_results
+
+
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-from embeddings import embedded_chunks
+from app.embeddings import embedded_chunks
 import chromadb
 
 client = chromadb.PersistentClient(path="app/chromadb")
