@@ -1,22 +1,25 @@
 from sentence_transformers import SentenceTransformer
-from app.chunking import chunked_documents
+from app.chunking import create_chunks
 
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
+def create_embeddings(chunks):
+   embedded_chunks = []
 
-embedded_chunks=[]
-
-for chunk in chunked_documents:
+   for chunk in chunks:
     embedding = model.encode(chunk["text"]).tolist()
+
     embedded_chunks.append({
-        "id": chunk['id'],
-        "metadata": chunk['metadata'],
-        "text": chunk['text'],
+        "id": chunk["id"],
+        "text": chunk["text"],
+        "metadata": chunk["metadata"],
         "embedding": embedding
     })
 
-if __name__ =="__main__":
-    print(len(embedded_chunks[0]['embedding']))
-    for embed in embedded_chunks: 
-     print("="*80)
-     print(embed['id'], embed['metadata'], embed['text'][:50], embed['embedding'][:5])
+   return embedded_chunks
+
+
+if __name__ == "__main__":
+    chunks = create_chunks("Quantum computing.pdf")
+    embeddings = create_embeddings(chunks)
+    print("Total embedded chunks:", len(embeddings))

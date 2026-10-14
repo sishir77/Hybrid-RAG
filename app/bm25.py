@@ -1,52 +1,39 @@
-from app.chunking import chunked_documents
 from rank_bm25 import BM25Okapi
+from app.database import collection
 
 
-documents = [chunk['text']  for chunk in chunked_documents]
+def bm25_search(question, top_k=5):
+    stored_data = collection.get(include=["documents", "metadatas"])
 
-tokenize_documents = [document.split() for document in documents]
+    documents = stored_data["documents"]
+    ids = stored_data["ids"]
+    metadatas = stored_data["metadatas"]
 
-splitted_store = BM25Okapi(tokenize_documents)
+    if not documents:
+        return []
 
-def bm25_search(question, k=3):
-    tokenize_query = question.split()
+    tokenized_documents = [
+        document.lower().split()
+        for document in documents
+    ]
 
-    scores = splitted_store.get_scores(tokenize_query)
+    bm25 = BM25Okapi(tokenized_documents)
+    scores = bm25.get_scores(question.lower().split())
 
-    ranked_indices= sorted(
+    ranked_indices = sorted(
         range(len(scores)),
-        key= lambda i:  scores[i],
-        reverse= True
-    )[:k]
-    results=[]
+        key=lambda index: scores[index],
+        reverse=True
+    )[:top_k]
+
+    results = []
 
     for index in ranked_indices:
         results.append({
-            "id": chunked_documents[index]['id'],
-            "text": chunked_documents[index]['text'],
-            "metadata": chunked_documents[index]['metadata'],
-            'score': float(scores[index])
+            "id": ids[index],
+            "text": documents[index],
+            "metadata": metadatas[index],
+            "score": float(scores[index])
         })
 
     return results
-
-if __name__ == "__main__":
-    question = "What are opportunities and risks in encryption?"
-
-    results = bm25_search(question, k=3)
-
-    for result in results:
-        print("ID:", result[id])
-        print("Score:", result["score"])
-        print("Text:", result["text"])
-        print("-" * 50)
-        
-
-
-
-
-
-
-
-
-

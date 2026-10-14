@@ -1,113 +1,89 @@
-from app.open_pdf import result, tables
-from langchain_text_splitters import MarkdownTextSplitter,RecursiveCharacterTextSplitter,MarkdownHeaderTextSplitter
 
-#split the text into sections based on the headers
-headers =[
-   ("#", "h1"),
-   ("##", "h2"),
-   ("###", "h3"),
-   ("####", "h4")
-]
-splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers)
-sections = splitter.split_text(result)
-
-
-#split the splitted sections by header into smaller chunks of text based on separators with chunk size.
-section_splitter = RecursiveCharacterTextSplitter(
-   chunk_size=500,
-   chunk_overlap=100,
-   separators=["\n\n", "\n", " ", ""]
+from app.open_pdf import parse_file
+from langchain_text_splitters import (
+    RecursiveCharacterTextSplitter,
+    MarkdownHeaderTextSplitter
 )
-chunked_documents = []
-chunked_id=0
 
-#detect markdown table
-"""def is_table_line(line):
-    return line.strip().startswith("|") and line.strip().endswith("|")"""
 
-#extract table from normal text
-"""def extract_table(text):
-    lines = text.splitlines()
-    tables =[]
-    normal_lines= []
+def create_chunks(file_path):
+    # Parse the PDF
+    result, tables = parse_file(file_path)
 
-    current_table = []
+    # Split Markdown by headings
+    headers = [
+        ("#", "h1"),
+        ("##", "h2"),
+        ("###", "h3"),
+        ("####", "h4")
+    ]
 
-    for line in lines:
-        if is_table_line(line):
-            current_table.append(line)
+    splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers
+    )
+    sections = splitter.split_text(result)
 
-        else:
-            if current_table:
-                tables.append("\n".join(current_table))
-                current_table =[]
+    # Split sections into smaller chunks
+    section_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=500,
+        chunk_overlap=100,
+        separators=["\n\n", "\n", " ", ""]
+    )
 
-            normal_lines.append(line)
+    chunked_documents = []
+    chunked_id = 0
 
-    #handles last line if it is a table
-    if current_table:
-        tables.append("\n".join(current_table))
-
-    normal_text = "\n".join(normal_lines)
-    return normal_text, tables"""
-
-#for normal text
-for section in sections:
-   # normal_text, tables = extract_table(section.page_content)
-
-    #split the normal text into smaller chunks
-    if section.page_content.strip():
-        normal_chunks = section_splitter.split_text(section.page_content)
-        for chunk in  normal_chunks:
-            chunked_id +=1
-            chunked_documents.append({
-                "id": chunked_id,
-                "text":chunk,
-                "document":"...",
-                "metadata": {
-                    **section.metadata,
-                    "type": "text"
-                }
-            })
-
-#for table
-for table in tables:
-    table_metadata={}
+    # Chunk normal text
     for section in sections:
-        if table in section.page_content:
-            table_metadata= section.metadata
-            break
-    chunked_id+=1
-    chunked_documents.append({
-        "id":chunked_id,
-        "text":table,
-        "document":"...",
-        "metadata":{
-            **table_metadata,
-            "type":"table"
-        }
-    })
+        if section.page_content.strip():
+            normal_chunks = section_splitter.split_text(
+                section.page_content
+            )
+
+            for chunk in normal_chunks:
+                chunked_id += 1
+                chunked_documents.append({
+                    "id": chunked_id,
+                    "text": chunk,
+                    "document": file_path,
+                    "metadata": {
+                        **section.metadata,
+                        "type": "text"
+                    }
+                })
+
+    # Add extracted tables
+    for table in tables:
+        table_metadata = {}
+
+        for section in sections:
+            if table in section.page_content:
+                table_metadata = section.metadata
+                break
+
+        chunked_id += 1
+        chunked_documents.append({
+            "id": chunked_id,
+            "text": table,
+            "document": file_path,
+            "metadata": {
+                **table_metadata,
+                "type": "table"
+            }
+        })
+
+    return chunked_documents
 
 
 if __name__ == "__main__":
-    for doc in chunked_documents:
-        print("=" * 80)
+    chunks = create_chunks("Quantum computing.pdf")
 
+    print("Total chunks:", len(chunks))
+
+    for doc in chunks:
+        print("=" * 80)
         print("ID:", doc["id"])
         print("TYPE:", doc["metadata"]["type"])
         print("SECTION:", doc["metadata"])
-
         print("\nTEXT:")
         print(doc["text"])
-
-
- 
-
-
-
-
-
-
-
-
-

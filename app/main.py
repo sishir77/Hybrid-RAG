@@ -1,7 +1,13 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, File, UploadFile
 from pydantic import BaseModel
 from app.hybrid_retrieval import hybrid_search
 from app.llm import generate_answer
+import shutil
+import os
+import uuid
+from app.embeddings import create_embeddings
+from app.database import store_embeddings
+from app.chunking import create_chunks
 
 
 
@@ -11,6 +17,49 @@ app = FastAPI()
 @app.get("/")
 def home():
     return("welcome to homepage of hybrid rag")
+
+UPLOAD_DIR = "app/uploads"
+
+os.makedirs(UPLOAD_DIR, exist_ok= True)
+
+@app.post("/upload")
+async def upload_pdf(file: UploadFile = File(...)):
+
+    if not file.filename.lower().endswith(".pdf"):
+        raise HTTPException(
+            status_code=400,
+            detail="Only PDF files are allowed"
+        )
+
+    file_path = os.path.join(
+           UPLOAD_DIR,
+          f"{uuid.uuid4().hex[:8]}_{os.path.basename(file.filename)}"
+          )
+    
+    with open(file_path, "wb") as buffer:
+     shutil.copyfileobj(file.file, buffer)
+
+
+    chunks = create_chunks(file_path)
+    
+
+    # Give each upload unique chunk IDs
+    upload_id = uuid.uuid4().hex[:8]
+
+    for chunk in chunks:
+       chunk["id"] = f"{upload_id}_{chunk['id']}"
+
+    # Convert chunks into embeddings
+    embedded_chunks = create_embeddings(chunks)
+
+    # Save chunks and embeddings in ChromaDB
+    store_embeddings(embedded_chunks)
+    return {
+     "message": "PDF uploaded, chunked, embedded, and stored successfully",
+     "filename": file.filename,
+     "total_chunks": len(chunks) 
+   }
+
 
 class question_request(BaseModel):
     question :str

@@ -41,7 +41,7 @@ def reciprocal_rank_fusion(result_list, rank_constant=60, top_k=5):
 
 def hybrid_search(question, k=5):
     semantic_results = similarity_search(question, k=k)
-    bm25_results = bm25_search(question, k=k)
+    bm25_results =  bm25_search(question, top_k=k)
 
     #print("Semantic IDs:", [r["id"] for r in semantic_results])
     #print("BM25 IDs:", [r["id"] for r in bm25_results])

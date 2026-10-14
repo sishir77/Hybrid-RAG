@@ -1,16 +1,21 @@
-from app.embeddings import embedded_chunks
+
 import chromadb
 
 client = chromadb.PersistentClient(path="app/chromadb")
 collection = client.get_or_create_collection("data")
 
-for chunk in embedded_chunks:
-    collection.add(
-        ids=[str(chunk['id'])],
-        metadatas=[chunk['metadata']],
-        documents=[chunk['text']],
-        embeddings=[chunk['embedding']]
-    )
+
+def store_embeddings(embedded_chunks):
+    for chunk in embedded_chunks:
+        collection.upsert(
+            ids= [str(chunk['id'])],
+            metadatas= [chunk['metadata']],
+            documents =  [chunk['text']],
+            embeddings= [chunk['embedding']]
+        )
+
+    return collection
+
 
 if __name__ == "__main__":
     print(collection)
