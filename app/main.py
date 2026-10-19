@@ -31,9 +31,12 @@ async def upload_pdf(file: UploadFile = File(...)):
             detail="Only PDF files are allowed"
         )
 
+    # Give each upload unique chunk IDs
+    upload_id = uuid.uuid4().hex[:12]
+
     file_path = os.path.join(
            UPLOAD_DIR,
-          f"{uuid.uuid4().hex[:8]}_{os.path.basename(file.filename)}"
+          f"{upload_id}_{os.path.basename(file.filename)}"
           )
     
     with open(file_path, "wb") as buffer:
@@ -43,11 +46,9 @@ async def upload_pdf(file: UploadFile = File(...)):
     chunks = create_chunks(file_path)
     
 
-    # Give each upload unique chunk IDs
-    upload_id = uuid.uuid4().hex[:8]
-
     for chunk in chunks:
        chunk["id"] = f"{upload_id}_{chunk['id']}"
+       chunk['metadata']['document_id']= upload_id
 
     # Convert chunks into embeddings
     embedded_chunks = create_embeddings(chunks)
@@ -57,12 +58,15 @@ async def upload_pdf(file: UploadFile = File(...)):
     return {
      "message": "PDF uploaded, chunked, embedded, and stored successfully",
      "filename": file.filename,
+     "document_id": upload_id,
      "total_chunks": len(chunks) 
+     
    }
 
 
 class question_request(BaseModel):
     question :str
+    document_id:str
 
 
 class SourceResponse(BaseModel):
@@ -78,7 +82,7 @@ class AnswerResponse(BaseModel):
 
 @app.post("/ask", response_model=AnswerResponse)
 def ask_question(request:question_request):
-    results = hybrid_search(request.question, k=3)
+    results = hybrid_search(request.question, request.document_id,k=3)
 
     if not results:
         raise HTTPException(

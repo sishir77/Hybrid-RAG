@@ -1,9 +1,14 @@
 from rank_bm25 import BM25Okapi
 from app.database import collection
+import re
 
+def tokenize(text):
+    return re.findall(r"\b[a-z0-9]+\b", text.lower())
 
-def bm25_search(question, top_k=5):
-    stored_data = collection.get(include=["documents", "metadatas"])
+def bm25_search(question,document_id, top_k=5):
+    stored_data = collection.get(
+        where={"document_id": document_id},
+        include=["documents", "metadatas"])
 
     documents = stored_data["documents"]
     ids = stored_data["ids"]
@@ -13,12 +18,12 @@ def bm25_search(question, top_k=5):
         return []
 
     tokenized_documents = [
-        document.lower().split()
+        tokenize(document)
         for document in documents
     ]
 
     bm25 = BM25Okapi(tokenized_documents)
-    scores = bm25.get_scores(question.lower().split())
+    scores = bm25.get_scores(tokenize(question))
 
     ranked_indices = sorted(
         range(len(scores)),
@@ -37,3 +42,12 @@ def bm25_search(question, top_k=5):
         })
 
     return results
+if __name__ == "__main__":
+    question = "what are the responsibilities of shishir gautam?"
+    results = bm25_search(question, top_k=5)
+
+    for result in results:
+        print("\nID:", result["id"])
+        print("Section:", result["metadata"].get("h2"))
+        print("Score:", result["score"])
+        print("Text:", result["text"][:300])
